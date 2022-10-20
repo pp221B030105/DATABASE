@@ -280,7 +280,7 @@ select * from student
 where tot_cred > 45 and tot_cred < 90;
 --f)
 select * from student
-where RIGHT(name,1) ~* '[a,e,i,o,u]';
+where name like '%e' or name like '%i' or name like '%a' or name like '%u' or name like '%o';
 --g)
 select * from course
 where course_id in(select prereq.course_id from prereq where prereq_id = 'CS-101');
@@ -291,10 +291,12 @@ from instructor
 group by dept_name
 order by avg(salary);
 --b)
-select building,count(dept_name) as max from department
+select building,count(*) as max from department,course
+where course.dept_name = department.dept_name
 group by building
 order by max desc
-limit 1;
+;
+
 --c)
 select dept_name,count(course_id) as courses from course
 group by dept_name
