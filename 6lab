@@ -1,0 +1,132 @@
+create database lab6;
+create table dealer (
+                        id integer primary key ,
+                        name varchar(255),
+                        location varchar(255),
+                        charge float
+);
+
+INSERT INTO dealer (id, name, location, charge) VALUES (101, 'Ерлан', 'Алматы', 0.15);
+INSERT INTO dealer (id, name, location, charge) VALUES (102, 'Жасмин', 'Караганда', 0.13);
+INSERT INTO dealer (id, name, location, charge) VALUES (105, 'Азамат', 'Нур-Султан', 0.11);
+INSERT INTO dealer (id, name, location, charge) VALUES (106, 'Канат', 'Караганда', 0.14);
+INSERT INTO dealer (id, name, location, charge) VALUES (107, 'Евгений', 'Атырау', 0.13);
+INSERT INTO dealer (id, name, location, charge) VALUES (103, 'Жулдыз', 'Актобе', 0.12);
+
+create table client (
+                        id integer primary key ,
+                        name varchar(255),
+                        city varchar(255),
+                        priority integer,
+                        dealer_id integer references dealer(id)
+);
+
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (802, 'Айша', 'Алматы', 100, 101);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (807, 'Даулет', 'Алматы', 200, 101);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (805, 'Али', 'Кокшетау', 200, 102);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (808, 'Ильяс', 'Нур-Султан', 300, 102);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (804, 'Алия', 'Караганда', 300, 106);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (809, 'Саша', 'Шымкент', 100, 103);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (803, 'Маша', 'Семей', 200, 107);
+INSERT INTO client (id, name, city, priority, dealer_id) VALUES (801, 'Максат', 'Нур-Султан', null, 105);
+
+create table sell (
+                      id integer primary key,
+                      amount float,
+                      date timestamp,
+                      client_id integer references client(id),
+                      dealer_id integer references dealer(id)
+);
+
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (201, 150.5, '2012-10-05 00:00:00.000000', 805, 102);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (209, 270.65, '2012-09-10 00:00:00.000000', 801, 105);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (202, 65.26, '2012-10-05 00:00:00.000000', 802, 101);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (204, 110.5, '2012-08-17 00:00:00.000000', 809, 103);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (207, 948.5, '2012-09-10 00:00:00.000000', 805, 102);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (205, 2400.6, '2012-07-27 00:00:00.000000', 807, 101);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (208, 5760, '2012-09-10 00:00:00.000000', 802, 101);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (210, 1983.43, '2012-10-10 00:00:00.000000', 804, 106);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (203, 2480.4, '2012-10-10 00:00:00.000000', 809, 103);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (212, 250.45, '2012-06-27 00:00:00.000000', 808, 102);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (211, 75.29, '2012-08-17 00:00:00.000000', 803, 107);
+INSERT INTO sell (id, amount, date, client_id, dealer_id) VALUES (213, 3045.6, '2012-04-25 00:00:00.000000', 802, 101);
+
+-- drop table client;
+-- drop table dealer;
+-- drop table sell;
+
+
+---1)
+--a)
+select * from dealer de
+join client c on de.id = c.dealer_id
+--b)
+select * from dealer de
+join client c on de.id = c.dealer_id
+join public.sell s on de.id = s.dealer_id;
+--c)
+select d.name,d.location,c.name,c.city from dealer d
+join client c on d.id = c.dealer_id
+where d.location = c.city;
+--d)
+select s.id,s.amount,c.name,c.city from sell s
+full join client c on c.id = s.client_id
+where s.amount between 100 and 500
+--e)
+select * from dealer d
+left join client c on d.id = c.dealer_id;
+--f)
+select d.name,d.charge,c.name,c.city from dealer d
+full join client c on d.id = c.dealer_id;
+--g)
+select c.name,c.city,d.name,d.charge from dealer d
+join client c on d.id = c.dealer_id
+where d.charge > 0.12;
+--h)
+select c.name,c.city,s.id,s.date,s.amount,d.name,d.charge from dealer d
+full join client c on d.id = c.dealer_id
+full join sell s on d.id = s.dealer_id
+--i)
+select c.name,c.priority,d.name,s.id,s.amount from dealer d
+inner join client c on d.id = c.dealer_id
+full outer join sell s on d.id = s.dealer_id
+where s.amount > 2000 and c.priority is not null;
+--2)
+--a)
+create or replace view uniq as select date,count(client_id),avg(amount),sum(amount) from sell
+group by date;
+select *  from uniq;
+--b)
+create or replace view top_5 as select distinct date,sum(amount) from sell
+group by date
+order by sum(amount) desc limit 5;
+select * from top_5;
+--c)
+create or replace view deal as select distinct count(id),avg(amount),sum(amount) from sell
+where dealer_id is not null group by dealer_id;
+select * from deal;
+--d)
+create or replace view all_deal as select dealer.location,sum(dealer.charge * sell.amount) from dealer
+left join sell on dealer.id = sell.dealer_id
+group by dealer.location;
+select * from all_deal;
+--e)
+create or replace view sale_dealers as select dealer.location,avg(sell.amount),count(sell.id),sum(sell.amount) from dealer left join sell on dealer.id = sell.dealer_id group by dealer.location;
+select * from sale_dealers;
+--f)
+create or replace view city_clients as select client.city,count(client.id),avg(sell.amount),sum(sell.amount) from client
+left join sell  on client.id = sell.client_id group by client.city;
+select * from city_clients;
+--g)
+create or replace view cities as select client.city from client
+inner join sell on client.id = sell.client_id
+                                 group by client.city
+                                 having sum(sell.amount) > (select sum(sell.amount) from dealer d join sell on d.id = sell.dealer_id
+                                                            where client.city = d.location
+                                                            group by d.location);
+select * from cities;
+
+
+
+
+
