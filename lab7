@@ -1,0 +1,151 @@
+--1)
+--a)
+create function inc(a int) returns int as $$
+begin
+    return a + 1;
+end;
+    $$ language plpgsql;
+select inc(4);
+--b)
+create function get_sum(a int,b int) returns int as $$
+begin
+    return a + b;
+end;
+$$ language plpgsql;
+select get_sum(2,3);
+--c)
+create or replace function div_2(n int) returns bool as $$
+    begin
+        if n % 2 = 0 then return true;
+        else return false;
+        end if;
+    end;
+    $$ language plpgsql;
+select div_2(4);
+select div_2(5);
+--d)
+create or replace function password(s varchar) returns bool as $$
+    begin
+        if s != 'qwerty' then return false;
+        else return true;
+        end if;
+    end;
+    $$ language plpgsql;
+select password('qwerty');
+--e)
+create or replace function outp(n int,out plus int,out squ int)  as $$
+    begin
+        plus = n + 1;
+        squ = n * n;
+    end;
+    $$ language plpgsql;
+select * from outp(5);
+
+--2)
+--a)
+create function time_S()
+    returns trigger as
+$$
+begin
+    raise notice '%',now();
+    return new;
+end;
+$$
+    language plpgsql;
+--b)
+create or replace function age() returns trigger as
+$$
+begin
+    raise notice '%', age(now(),new);
+    return new;
+end;
+$$ language plpgsql;
+
+create trigger age_a before insert on t2 for each row execute procedure age();
+--c)
+create or replace function tax()returns trigger as $$
+begin
+    new.prices = new.prices * 1.12;
+    return new;
+end;
+$$ language plpgsql;
+
+create trigger tax_t before insert on t3 for each row execute procedure tax();
+
+--d)
+create or replace function stop_del()returns trigger as $$
+begin
+    raise notice 'error';
+end;
+$$ language plpgsql;
+
+create trigger delet before delete on t4 execute procedure stop_del();
+
+--e)
+create or replace function call()returns trigger as $$
+begin
+    raise notice '%', password(new);
+    raise notice '%', outp(new);
+    return new;
+end;
+$$ language plpgsql;
+
+create trigger require before insert on t5 for each row execute procedure call();
+
+
+--3)
+--a)
+
+create function inc_sal(id int, name varchar, date_of_birth date, age int, inout salary int, work_experience int, out discount numeric) as $$
+declare
+    count int;
+begin
+    discount = 10;
+    count = work_experience/2;
+    for step in 1..count
+        loop
+            salary = salary * 1.1;
+        end loop;
+    count = work_experience/5;
+    for step in 1..count
+        loop
+            discount = discount * 1.01;
+        end loop;
+    insert into work
+    values(id, name, date_of_birth, age, salary, work_experience, discount);
+end;
+$$ language plpgsql;
+
+select * from inc_sal(1, 'sam', '2003-07-12', 23, 10000, 12);
+
+
+
+
+--b)
+create or replace function inc_value(id int, name varchar, date_of_birth date, age int, inout salary numeric, work_experience int, out discount int) as $$
+DECLARE
+    count int;
+BEGIN
+    discount = 10;
+    if age >= 40 then salary = salary * 1.15;
+    end if;
+    count = work_experience/2;
+    for step in 1..count
+        loop
+            salary = salary * 1.1;
+        end loop;
+    count = work_experience/5;
+    for step in 1..count
+        loop
+            discount = discount * 1.01;
+        end loop;
+    if work_experience > 8 then salary = salary * 1.15;
+    end if;
+    if work_experience > 8 then discount = 20;
+    end if;
+    insert into work
+    values(id, name, date_of_birth, age, salary, work_experience, discount);
+end;
+$$ language plpgsql;
+
+select * from inc_value(2, 'John', '1996-02-10', 10, 2000, 20);
